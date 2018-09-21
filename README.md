@@ -1,4 +1,5 @@
 #UNIX Assignment - *Cassie Winn*
+Due Friday, September 21st 5pm
 
 ##*Data Inspection*
 
@@ -48,17 +49,17 @@ $ wc -l fang_et_al_genotypes.txt snp_position.txt
 First, I took the column headers and put them in new files. Then, I extracted the maize and teosinte data and appended them to the new files. 
 
 ```
-head -n 1 fang_et_al_genotypes.txt > maize_genotypes.txt
+$ head -n 1 fang_et_al_genotypes.txt > maize_genotypes.txt
 ```
 ```
-head -n 1 fang_et_al_genotypes.txt > teosinte_genotypes.txt
+$ head -n 1 fang_et_al_genotypes.txt > teosinte_genotypes.txt
 ```
 ```
 $ awk '$3 ~ /ZMMIL|ZMMLR|ZMMMR/ { print $0}' fang_et_al_genotypes.txt >> maize_genotypes.txt
 ```
 
 ```
-awk '$3 ~ /ZMPBA|ZMPIL|ZMPJA/ { print $0}' fang_et_al_genotypes.txt >> teosinte_genotypes.txt
+$ awk '$3 ~ /ZMPBA|ZMPIL|ZMPJA/ { print $0}' fang_et_al_genotypes.txt >> teosinte_genotypes.txt
 ```
 I checked to make sure my extractions worked by looking at the number of lines, words and characters in each file.
 
@@ -88,10 +89,10 @@ $ cut -f 3 teosinte_genotypes.txt | sort | uniq -c
 Next, I transposed my genotype data so that the columns became rows. I used the transpose.awk script provided, and checked line, word and character counts. We expect the two transposed files to have new, but matching line counts.
 
 ```
-awk -f transpose.awk maize_genotypes.txt > transposed_maize_genotypes.txt
+$ awk -f transpose.awk maize_genotypes.txt > transposed_maize_genotypes.txt
 ```
 ```
-awk -f transpose.awk teosinte_genotypes.txt > transposed_teosinte_genotypes.txt
+$ awk -f transpose.awk teosinte_genotypes.txt > transposed_teosinte_genotypes.txt
 ```
 ```
 $ wc transposed_maize_genotypes.txt transposed_teosinte_genotypes.txt 
@@ -101,7 +102,8 @@ $ wc transposed_maize_genotypes.txt transposed_teosinte_genotypes.txt
 ```
 
 ###Format Genotype Files & Sort
-Recall that the snp_position.txt file has 984 lines, while the new genotype files has 986 lines. This is because the genotype files have two lines containing additional info. So separate out the two top lines into different files.
+The snp_position.txt file has 984 lines, while the new genotype files each have 986 lines. This is because the genotype files have two lines containing additional info at the beginning of the file. So first, I separated out the two top lines into different files, to be used later. Below is an example using the maize files.
+
 ```
 $ tail -n +4 transposed_maize_genotypes.txt > maize_tran.txt
 ```
@@ -109,18 +111,35 @@ $ tail -n +4 transposed_maize_genotypes.txt > maize_tran.txt
 $ head -n 3 transposed_maize_genotypes.txt > maize_header.txt
 ```
 
-Check that it worked by cat and head
+Check that it worked by using the commands cat and head:
+
 ```
 $ cut -f 1-5 maize_header.txt | column -t | head
 ```
-Then manually add in column headers for 
+
+Then I manually added in column headers ("SNP_ID" "Chromosome" "Position") in header.txt by editing in vi
+```
+$ vi maize_header.txt
+```
+
+Again, I checked the file by using cat and head:
+
+```
+$ cut -f 1-5 maize_header.txt | column -t | head
+
+SNP_ID  Chromosome  Position  ZDP_0752a  ZDP_0793a
+SNP_ID  Chromosome  Position  JG_OTU     Zmm-LR-ACOM-usa-NM-1_s
+SNP_ID  Chromosome  Position  ZMMLR      ZMMLR
+```
+
+Next, I sorted the file by SNP_ID (column 1)
 
 ```
 $ sort -k1,1 maize_tran.txt > maize_tran_sort.txt
 ```
 
 ###Rearrange and Sort SNP file
-Cut out the columns of snp_position.txt that are needed and compile them in one file in the order desired (SNP_ID, Chromosome, Position).
+I then cut out the columns of snp_position.txt that are needed (1, 3 and 4) and compiled them in one file in the order desired (SNP ID, Chromosome, Position).
 
 ```
 $ cut -f 1 snp_position.txt > snp.txt
@@ -131,7 +150,7 @@ $ cut -f 4 snp_position.txt > snp_pos.txt
 $ paste snp.txt snp_chrom.txt > snp_plus_chrom.txt
 $ paste snp_plus_chrom.txt snp_pos.txt  > snp_all.txt
 ```
-Before the SNP file can be joined with genotype files, it must be sorted.
+Before the SNP file can be joined with genotype files, it must be sorted by SNP_ID as well (column 1).
 
 ```
 $ sort -k1,1 snp_all.txt > snp_all_sort.txt
@@ -139,4 +158,89 @@ $ sort -k1,1 snp_all.txt > snp_all_sort.txt
 
 ###Join SNP and Genotype Files
 
+Now that the SNP and Genotype files have both been formatted and sorted, it is time to join them.
+ 
+```
+$ join -1 1 -2 1 -t $'\t' -e 'empty' snp_all_sort.txt maize_tran_sort.txt > maize_join.txt
+```
+We then need to cat the joined file with the header file.
+
+```
+$ cat maize_header.txt maize_join.txt > maize.txt
+```
+
 ###Extract Data for Input Files
+
+Create 10 files (1 for each chromosome) where SNPs are ordered based on increasing position and missing data encoded by this symbol: ?
+The awk and cat commands below are run 10 times for each chromosome to create 10 _increasing.txt files.
+
+```
+$ sort -k2,2n -k3,3n maize.txt > maize_sort.txt
+```
+```
+$ awk '{ if ($2 == 1 && $3 !~ /multiple/) { print } }' maize_sort.txt > maize_chrom_01_noheader.txt
+```
+```
+$ cat maize_header.txt maize_chrom_01_noheader.txt > maize_chrom_01_increasing.txt
+```
+Create 10 files (1 for each chromosome) where SNPs are ordered based on decreasing position and missing data is encoded by this symbol: -
+The awk and cat commands below are run 10 times for each chromosome to create 10 _decreasing.txt files.
+
+```
+$ sort -k2,2n -k3,3nr maize.txt > maize_sort_decrease.txt
+```
+```
+$ sed 's/?/-/g' maize_sort_decrease.txt > maize_decrease.txt
+```
+```
+$ awk '{ if ($2 == 1 && $3 !~ /multiple/) { print } }' maize_decrease.txt > maize_chrom_01_noheader_decrease.txt
+```
+```
+$ cat maize_header.txt maize_chrom_01_noheader_decrease.txt > maize_chrom_01_decreasing.txt
+```
+Create 1 file with all SNPs with unknown positions in the genome.
+
+```
+$ awk '{ if ($2 ~ /unknown/ || $3 ~ /unknown/) { print } }' maize_sort.txt > maize_unknown_noheader.txt
+```
+```
+$ cat maize_header.txt maize_unknown_noheader.txt > maize_unknown.txt
+```
+Create 1 file with all SNPs with multiple positions in the genome.
+
+```
+$ awk '{ if ($2 ~ /multiple/ || $3 ~ /multiple/) { print } }' maize_sort.txt > maize_multiple_noheader.txt
+```
+```
+$ cat maize_header.txt maize_chrom_multiple_noheaderz.txt > maize_chrom_mult.txt
+```
+###Repeat Format, Join and Extract Steps for Teosinte Files (22 files created)
+Format:
+
+```
+$ tail -n +4 transposed_teosinte_genotypes.txt > teosinte_tran.txt
+$ head -n 3 transposed_teosinte_genotypes.txt > teosinte_header.txt
+$ vi teosinte_header.txt
+$ sort -k1,1 teosinte_tran.txt > teosinte_tran_sort.txt
+```
+Join:
+
+```
+$ join -1 1 -2 1 -t $'\t' -e 'empty' snp_all_sort.txt teosinte_tran_sort.txt > teosinte_join.txt
+$ cat teosinte_header.txt teosinte_join.txt > teosinte.txt
+```
+Extract:
+
+```
+$ sort -k2,2n -k3,3n teosinte.txt > teosinte_sort.txt
+$ awk '{ if ($2 == 1 && $3 !~ /multiple/) { print } }' teosinte_sort.txt > teosinte_chrom_01_noheader.txt
+$ cat teosinte_header.txt teosinte_chrom_01_noheader.txt > teosinte_chrom_01_increasing.txt
+$ sort -k2,2n -k3,3nr teosinte.txt > teosinte_sort_decrease.txt
+$ sed 's/?/-/g' teosinte_sort_decrease.txt > teosinte_decrease.txt
+$ awk '{ if ($2 == 1 && $3 !~ /multiple/) { print } }' teosinte_decrease.txt > teosinte_chrom_01_noheader_decrease.txt
+$ cat teosinte_header.txt teosinte_chrom_01_noheader_decrease.txt > teosinte_chrom_01_decreasing.txt
+$ awk '{ if ($2 ~ /unknown/ || $3 ~ /unknown/) { print } }' teosinte_sort.txt > teosinte_unknown_noheader.txt
+$ cat teosinte_header.txt teosinte_unknown_noheader.txt > mteosinte_unknown.txt
+$ awk '{ if ($2 ~ /multiple/ || $3 ~ /multiple/) { print } }' teosinte_sort.txt > teosinte_multiple_noheader.txt
+$ cat teosinte_header.txt teosinte_chrom_multiple_noheader.txt > teosinte_chrom_mult.txt
+```
