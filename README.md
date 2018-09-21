@@ -189,6 +189,7 @@ The awk and cat commands below are run 10 times for each chromosome to create 10
 ```
 $ sort -k2,2n -k3,3nr maize.txt > maize_sort_decrease.txt
 ```
+Use sed to find and substitute "?" with "-" symbol. 
 ```
 $ sed 's/?/-/g' maize_sort_decrease.txt > maize_decrease.txt
 ```
