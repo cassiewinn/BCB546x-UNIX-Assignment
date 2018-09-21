@@ -1,9 +1,9 @@
 # UNIX Assignment - *Cassie Winn*
 Due Friday, September 21st 5pm
 
-##*Data Inspection*
+## *Data Inspection*
 
-###Determining File Size
+### Determining File Size
 
 ```
 $ du -h fang_et_al_genotypes.txt 
@@ -14,7 +14,7 @@ $ du -h snp_position.txt
 84K	snp_position.txt
 ```
 
-###Determining Number of Columns
+### Determining Number of Columns
 
 ```
 $ awk -F "\t" '{print NF; exit}' fang_et_al_genotypes.txt
@@ -26,7 +26,7 @@ $ awk -F "\t" '{print NF; exit}' snp_position.txt
 15
 ```
 
-###Determining Number of Lines, Words and Characters
+### Determining Number of Lines, Words and Characters
 If we want to look at number of lines, words and bytes (characters) use the wc command.
 
 ```
@@ -44,8 +44,8 @@ $ wc -l fang_et_al_genotypes.txt snp_position.txt
 	3767 total
 ```
 
-##*Data Processing*
-###Extracting Info from Files
+## *Data Processing*
+### Extracting Info from Files
 First, I took the column headers and put them in new files. Then, I extracted the maize and teosinte data and appended them to the new files. 
 
 ```
@@ -85,7 +85,7 @@ $ cut -f 3 teosinte_genotypes.txt | sort | uniq -c
      41 ZMPIL
      34 ZMPJA
 ```
-###Tranposing Files
+### Tranposing Files
 Next, I transposed my genotype data so that the columns became rows. I used the transpose.awk script provided, and checked line, word and character counts. We expect the two transposed files to have new, but matching line counts.
 
 ```
@@ -101,7 +101,7 @@ $ wc transposed_maize_genotypes.txt transposed_teosinte_genotypes.txt
     1972  2512328 10113452 total
 ```
 
-###Format Genotype Files & Sort
+### Format Genotype Files & Sort
 The snp_position.txt file has 984 lines, while the new genotype files each have 986 lines. This is because the genotype files have two lines containing additional info at the beginning of the file. So first, I separated out the two top lines into different files, to be used later. Below is an example using the maize files.
 
 ```
@@ -138,7 +138,7 @@ Next, I sorted the file by SNP_ID (column 1)
 $ sort -k1,1 maize_tran.txt > maize_tran_sort.txt
 ```
 
-###Rearrange and Sort SNP file
+### Rearrange and Sort SNP file
 I then cut out the columns of snp_position.txt that are needed (1, 3 and 4) and compiled them in one file in the order desired (SNP ID, Chromosome, Position).
 
 ```
@@ -156,7 +156,7 @@ Before the SNP file can be joined with genotype files, it must be sorted by SNP_
 $ sort -k1,1 snp_all.txt > snp_all_sort.txt
 ```
 
-###Join SNP and Genotype Files
+### Join SNP and Genotype Files
 
 Now that the SNP and Genotype files have both been formatted and sorted, it is time to join them.
  
@@ -169,7 +169,7 @@ We then need to cat the joined file with the header file.
 $ cat maize_header.txt maize_join.txt > maize.txt
 ```
 
-###Extract Data for Input Files
+### Extract Data for Input Files
 
 Create 10 files (1 for each chromosome) where SNPs are ordered based on increasing position and missing data encoded by this symbol: ?
 The awk and cat commands below are run 10 times for each chromosome to create 10 _increasing.txt files.
@@ -215,7 +215,7 @@ $ awk '{ if ($2 ~ /multiple/ || $3 ~ /multiple/) { print } }' maize_sort.txt > m
 ```
 $ cat maize_header.txt maize_chrom_multiple_noheaderz.txt > maize_chrom_mult.txt
 ```
-###Repeat Format, Join and Extract Steps for Teosinte Files (22 files created)
+### Repeat Format, Join and Extract Steps for Teosinte Files (22 files created)
 Format:
 
 ```
